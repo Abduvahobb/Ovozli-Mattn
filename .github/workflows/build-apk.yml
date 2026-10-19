@@ -1,0 +1,555 @@
+name: Build APK
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Android project files
+        run: |
+          mkdir -p src/main/java/com/example/voicetotext src/main/res/drawable src/main/res/drawable-anydpi-v26
+
+          cat > settings.gradle.kts <<'EOF_SETTINGS'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.name = "VoiceToText"
+          EOF_SETTINGS
+
+          cat > gradle.properties <<'EOF_PROPS'
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          EOF_PROPS
+
+          cat > build.gradle.kts <<'EOF_BUILD'
+          plugins {
+              id("com.android.application") version "8.5.2"
+              id("org.jetbrains.kotlin.android") version "1.9.24"
+          }
+
+          android {
+              namespace = "com.example.voicetotext"
+              compileSdk = 34
+
+              defaultConfig {
+                  applicationId = "com.example.voicetotext"
+                  minSdk = 24
+                  targetSdk = 34
+                  versionCode = 2
+                  versionName = "1.1"
+              }
+
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+          }
+          EOF_BUILD
+
+          cat > src/main/AndroidManifest.xml <<'EOF_MANIFEST'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.INTERNET" />
+
+              <queries>
+                  <intent>
+                      <action android:name="android.speech.RecognitionService" />
+                  </intent>
+              </queries>
+
+              <application
+                  android:icon="@drawable/ic_launcher"
+                  android:label="Ovoz Matn"
+                  android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+
+          </manifest>
+          EOF_MANIFEST
+
+          cat > src/main/res/drawable/ic_launcher_background.xml <<'EOF_ICBG'
+          <?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
+              <path
+                  android:fillColor="#4F46E5"
+                  android:pathData="M0,0h108v108h-108z" />
+              <path
+                  android:fillColor="#6366F1"
+                  android:pathData="M14,54a40,40 0 1,0 80,0a40,40 0 1,0 -80,0z" />
+          </vector>
+          EOF_ICBG
+
+          cat > src/main/res/drawable/ic_launcher_foreground.xml <<'EOF_ICFG'
+          <?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
+              <group
+                  android:scaleX="2"
+                  android:scaleY="2"
+                  android:translateX="30"
+                  android:translateY="30">
+                  <path
+                      android:fillColor="#FFFFFF"
+                      android:pathData="M12,14c1.66,0 3,-1.34 3,-3V5c0,-1.66 -1.34,-3 -3,-3S9,3.34 9,5v6c0,1.66 1.34,3 3,3z" />
+                  <path
+                      android:fillColor="#FFFFFF"
+                      android:pathData="M17.3,11c0,3 -2.54,5.1 -5.3,5.1S6.7,14 6.7,11H5c0,3.41 2.72,6.23 6,6.72V21h2v-3.28c3.28,-0.48 6,-3.3 6,-6.72h-1.7z" />
+              </group>
+          </vector>
+          EOF_ICFG
+
+          cat > src/main/res/drawable/ic_launcher.xml <<'EOF_ICOLD'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:drawable="@drawable/ic_launcher_background" />
+              <item android:drawable="@drawable/ic_launcher_foreground" />
+          </layer-list>
+          EOF_ICOLD
+
+          cat > src/main/res/drawable-anydpi-v26/ic_launcher.xml <<'EOF_ICADAPT'
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@drawable/ic_launcher_background" />
+              <foreground android:drawable="@drawable/ic_launcher_foreground" />
+          </adaptive-icon>
+          EOF_ICADAPT
+
+          cat > src/main/res/drawable/ic_mic.xml <<'EOF_MIC'
+          <?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp"
+              android:height="24dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M12,14c1.66,0 3,-1.34 3,-3V5c0,-1.66 -1.34,-3 -3,-3S9,3.34 9,5v6c0,1.66 1.34,3 3,3z" />
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M17.3,11c0,3 -2.54,5.1 -5.3,5.1S6.7,14 6.7,11H5c0,3.41 2.72,6.23 6,6.72V21h2v-3.28c3.28,-0.48 6,-3.3 6,-6.72h-1.7z" />
+          </vector>
+          EOF_MIC
+
+          cat > src/main/java/com/example/voicetotext/MainActivity.kt <<'EOF_KOTLIN'
+          package com.example.voicetotext
+
+          import android.Manifest
+          import android.app.Activity
+          import android.content.ClipData
+          import android.content.ClipboardManager
+          import android.content.Context
+          import android.content.Intent
+          import android.content.pm.PackageManager
+          import android.graphics.Color
+          import android.graphics.Typeface
+          import android.graphics.drawable.GradientDrawable
+          import android.os.Bundle
+          import android.speech.RecognitionListener
+          import android.speech.RecognizerIntent
+          import android.speech.SpeechRecognizer
+          import android.view.Gravity
+          import android.view.View
+          import android.view.ViewGroup
+          import android.view.animation.Animation
+          import android.view.animation.ScaleAnimation
+          import android.widget.ImageView
+          import android.widget.LinearLayout
+          import android.widget.ScrollView
+          import android.widget.TextView
+          import android.widget.Toast
+
+          class MainActivity : Activity() {
+
+              private val languages = listOf(
+                  "O'zbekcha" to "uz-UZ",
+                  "Русский" to "ru-RU",
+                  "English" to "en-US"
+              )
+
+              private val colorBg = Color.parseColor("#F4F5FB")
+              private val colorPrimary = Color.parseColor("#4F46E5")
+              private val colorPrimarySoft = Color.parseColor("#E0E7FF")
+              private val colorDanger = Color.parseColor("#EF4444")
+              private val colorText = Color.parseColor("#1F2937")
+              private val colorMuted = Color.parseColor("#6B7280")
+              private val colorSoftGray = Color.parseColor("#E5E7EB")
+
+              private val chips = ArrayList<TextView>()
+              private var selectedLang = 0
+
+              private lateinit var resultText: TextView
+              private lateinit var statusText: TextView
+              private lateinit var micButton: ImageView
+
+              private var recognizer: SpeechRecognizer? = null
+              private var listening = false
+              private var committedText = ""
+
+              private fun dp(value: Int): Int {
+                  return (value * resources.displayMetrics.density).toInt()
+              }
+
+              private fun roundBg(color: Int, radiusDp: Int): GradientDrawable {
+                  val d = GradientDrawable()
+                  d.setShape(GradientDrawable.RECTANGLE)
+                  d.setColor(color)
+                  d.setCornerRadius(dp(radiusDp).toFloat())
+                  return d
+              }
+
+              private fun circleBg(color: Int): GradientDrawable {
+                  val d = GradientDrawable()
+                  d.setShape(GradientDrawable.OVAL)
+                  d.setColor(color)
+                  return d
+              }
+
+              private fun makeAction(label: String, bg: Int, fg: Int): TextView {
+                  val t = TextView(this)
+                  t.text = label
+                  t.textSize = 16f
+                  t.gravity = Gravity.CENTER
+                  t.setTextColor(fg)
+                  t.setTypeface(Typeface.DEFAULT_BOLD)
+                  t.setPadding(dp(12), dp(14), dp(12), dp(14))
+                  t.background = roundBg(bg, 16)
+                  return t
+              }
+
+              private fun refreshChips() {
+                  for (i in chips.indices) {
+                      val c = chips[i]
+                      if (i == selectedLang) {
+                          c.background = roundBg(colorPrimary, 20)
+                          c.setTextColor(Color.WHITE)
+                      } else {
+                          c.background = roundBg(Color.WHITE, 20)
+                          c.setTextColor(colorText)
+                      }
+                  }
+              }
+
+              private fun setListeningUi(on: Boolean) {
+                  if (on) {
+                      micButton.background = circleBg(colorDanger)
+                      val pulse = ScaleAnimation(
+                          1f, 1.12f, 1f, 1.12f,
+                          Animation.RELATIVE_TO_SELF, 0.5f,
+                          Animation.RELATIVE_TO_SELF, 0.5f
+                      )
+                      pulse.setDuration(650L)
+                      pulse.setRepeatMode(Animation.REVERSE)
+                      pulse.setRepeatCount(Animation.INFINITE)
+                      micButton.startAnimation(pulse)
+                  } else {
+                      micButton.clearAnimation()
+                      micButton.background = circleBg(colorPrimary)
+                  }
+              }
+
+              @Suppress("DEPRECATION")
+              private fun styleSystemBars() {
+                  window.statusBarColor = colorBg
+                  window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+              }
+
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  styleSystemBars()
+
+                  val match = ViewGroup.LayoutParams.MATCH_PARENT
+                  val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
+
+                  val root = LinearLayout(this)
+                  root.orientation = LinearLayout.VERTICAL
+                  root.setBackgroundColor(colorBg)
+                  root.setPadding(dp(20), dp(24), dp(20), dp(20))
+
+                  val title = TextView(this)
+                  title.text = "Ovoz → Matn"
+                  title.textSize = 28f
+                  title.setTextColor(colorText)
+                  title.setTypeface(Typeface.DEFAULT_BOLD)
+                  root.addView(title, LinearLayout.LayoutParams(match, wrap))
+
+                  val subtitle = TextView(this)
+                  subtitle.text = "Gapiring, ilova yozib beradi"
+                  subtitle.textSize = 14f
+                  subtitle.setTextColor(colorMuted)
+                  val subParams = LinearLayout.LayoutParams(match, wrap)
+                  subParams.setMargins(0, dp(2), 0, dp(16))
+                  root.addView(subtitle, subParams)
+
+                  val chipRow = LinearLayout(this)
+                  chipRow.orientation = LinearLayout.HORIZONTAL
+                  for (i in languages.indices) {
+                      val chip = TextView(this)
+                      chip.text = languages[i].first
+                      chip.textSize = 15f
+                      chip.gravity = Gravity.CENTER
+                      chip.setPadding(dp(16), dp(10), dp(16), dp(10))
+                      chip.setOnClickListener {
+                          if (!listening) {
+                              selectedLang = i
+                              refreshChips()
+                          }
+                      }
+                      chips.add(chip)
+                      val chipParams = LinearLayout.LayoutParams(wrap, wrap)
+                      chipParams.setMargins(0, 0, dp(8), 0)
+                      chipRow.addView(chip, chipParams)
+                  }
+                  refreshChips()
+                  root.addView(chipRow, LinearLayout.LayoutParams(match, wrap))
+
+                  val card = LinearLayout(this)
+                  card.orientation = LinearLayout.VERTICAL
+                  card.background = roundBg(Color.WHITE, 20)
+                  card.elevation = dp(2).toFloat()
+                  card.setPadding(dp(18), dp(18), dp(18), dp(18))
+                  val cardParams = LinearLayout.LayoutParams(match, 0, 1f)
+                  cardParams.setMargins(0, dp(20), 0, dp(16))
+
+                  resultText = TextView(this)
+                  resultText.textSize = 19f
+                  resultText.setTextColor(colorText)
+                  resultText.hint = "Mikrofon tugmasini bosing va gapiring..."
+                  resultText.setHintTextColor(Color.parseColor("#9CA3AF"))
+                  resultText.setLineSpacing(0f, 1.2f)
+                  resultText.setTextIsSelectable(true)
+                  val scroll = ScrollView(this)
+                  scroll.addView(resultText)
+                  card.addView(scroll, LinearLayout.LayoutParams(match, match))
+                  root.addView(card, cardParams)
+
+                  statusText = TextView(this)
+                  statusText.gravity = Gravity.CENTER
+                  statusText.textSize = 14f
+                  statusText.setTextColor(colorMuted)
+                  statusText.text = "Boshlash uchun mikrofonni bosing"
+                  root.addView(statusText, LinearLayout.LayoutParams(match, wrap))
+
+                  micButton = ImageView(this)
+                  micButton.setImageResource(R.drawable.ic_mic)
+                  micButton.setPadding(dp(24), dp(24), dp(24), dp(24))
+                  micButton.background = circleBg(colorPrimary)
+                  micButton.elevation = dp(6).toFloat()
+                  val micParams = LinearLayout.LayoutParams(dp(84), dp(84))
+                  micParams.gravity = Gravity.CENTER_HORIZONTAL
+                  micParams.setMargins(0, dp(14), 0, dp(14))
+                  root.addView(micButton, micParams)
+
+                  val copyButton = makeAction("Nusxalash", colorPrimarySoft, colorPrimary)
+                  val clearButton = makeAction("Tozalash", colorSoftGray, colorText)
+                  val row = LinearLayout(this)
+                  row.orientation = LinearLayout.HORIZONTAL
+                  val copyParams = LinearLayout.LayoutParams(0, wrap, 1f)
+                  copyParams.setMargins(0, 0, dp(6), 0)
+                  val clearParams = LinearLayout.LayoutParams(0, wrap, 1f)
+                  clearParams.setMargins(dp(6), 0, 0, 0)
+                  row.addView(copyButton, copyParams)
+                  row.addView(clearButton, clearParams)
+                  root.addView(row, LinearLayout.LayoutParams(match, wrap))
+
+                  setContentView(root)
+
+                  if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+                      statusText.text = "Bu qurilmada ovoz tanish xizmati yo'q. Google ilovasini o'rnating yoki yangilang."
+                      micButton.isEnabled = false
+                      micButton.alpha = 0.4f
+                  }
+
+                  micButton.setOnClickListener {
+                      if (listening) {
+                          recognizer?.stopListening()
+                      } else {
+                          ensurePermissionAndListen()
+                      }
+                  }
+
+                  copyButton.setOnClickListener {
+                      val text = resultText.text.toString()
+                      if (text.isNotBlank()) {
+                          val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                          clipboard.setPrimaryClip(ClipData.newPlainText("voice_text", text))
+                          Toast.makeText(this, "Nusxalandi", Toast.LENGTH_SHORT).show()
+                      }
+                  }
+
+                  clearButton.setOnClickListener {
+                      committedText = ""
+                      resultText.text = ""
+                      statusText.text = "Boshlash uchun mikrofonni bosing"
+                  }
+              }
+
+              private fun ensurePermissionAndListen() {
+                  if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                      startListening()
+                  } else {
+                      requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1)
+                  }
+              }
+
+              override fun onRequestPermissionsResult(
+                  requestCode: Int,
+                  permissions: Array<out String>,
+                  grantResults: IntArray
+              ) {
+                  super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+                  if (requestCode == 1 && grantResults.isNotEmpty() &&
+                      grantResults[0] == PackageManager.PERMISSION_GRANTED
+                  ) {
+                      startListening()
+                  } else {
+                      Toast.makeText(this, "Mikrofon uchun ruxsat berilmadi", Toast.LENGTH_LONG).show()
+                  }
+              }
+
+              private fun startListening() {
+                  if (recognizer == null) {
+                      val r = SpeechRecognizer.createSpeechRecognizer(this)
+                      r.setRecognitionListener(listener)
+                      recognizer = r
+                  }
+
+                  val langTag = languages[selectedLang].second
+                  val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                  intent.putExtra(
+                      RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                      RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                  )
+                  intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
+                  intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                  intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+
+                  listening = true
+                  setListeningUi(true)
+                  statusText.text = "Tayyorlanmoqda..."
+                  recognizer?.startListening(intent)
+              }
+
+              private fun finishListening() {
+                  listening = false
+                  setListeningUi(false)
+              }
+
+              private fun showText(partial: String) {
+                  val parts = listOf(committedText, partial).filter { it.isNotBlank() }
+                  resultText.text = parts.joinToString(" ")
+              }
+
+              private val listener = object : RecognitionListener {
+                  override fun onReadyForSpeech(params: Bundle?) {
+                      statusText.text = "Gapiring..."
+                  }
+
+                  override fun onBeginningOfSpeech() {}
+
+                  override fun onRmsChanged(rmsdB: Float) {}
+
+                  override fun onBufferReceived(buffer: ByteArray?) {}
+
+                  override fun onEndOfSpeech() {
+                      statusText.text = "Matnga aylantirilmoqda..."
+                  }
+
+                  override fun onError(error: Int) {
+                      finishListening()
+                      if (error == SpeechRecognizer.ERROR_NO_MATCH ||
+                          error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
+                      ) {
+                          statusText.text = "Ovoz eshitilmadi, qayta urinib ko'ring"
+                      } else if (error == SpeechRecognizer.ERROR_NETWORK ||
+                          error == SpeechRecognizer.ERROR_NETWORK_TIMEOUT
+                      ) {
+                          statusText.text = "Internet bilan muammo"
+                      } else if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
+                          statusText.text = "Mikrofon uchun ruxsat berilmadi"
+                      } else {
+                          statusText.text = "Xatolik (kod: " + error + ")"
+                      }
+                  }
+
+                  override fun onResults(results: Bundle?) {
+                      finishListening()
+                      val list = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                      val text = if (list != null && list.isNotEmpty()) list[0] else ""
+                      if (text.isNotBlank()) {
+                          committedText = listOf(committedText, text)
+                              .filter { it.isNotBlank() }
+                              .joinToString(" ")
+                      }
+                      showText("")
+                      statusText.text = "Tayyor. Davom ettirish uchun yana bosing"
+                  }
+
+                  override fun onPartialResults(partialResults: Bundle?) {
+                      val list = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                      val partial = if (list != null && list.isNotEmpty()) list[0] else ""
+                      showText(partial)
+                  }
+
+                  override fun onEvent(eventType: Int, params: Bundle?) {}
+              }
+
+              override fun onDestroy() {
+                  recognizer?.destroy()
+                  recognizer = null
+                  super.onDestroy()
+              }
+          }
+          EOF_KOTLIN
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+
+      - name: Build debug APK
+        run: gradle assembleDebug --console=plain
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: build/outputs/apk/debug/*.apk
